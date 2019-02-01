@@ -3,14 +3,16 @@
 import sys
 
 def main():
-	if not sys.argv[1] and sys.argv[2]:
-		sys.exit(1)
-		print("Usage: readsFromContigs.py <k> <string>")
+	# if not sys.argv[1] and sys.argv[2]:
+	# 	sys.exit(1)
+	# 	print("Usage: readsFromContigs.py <k> <string>")
 
-	k=int(sys.argv[1])
-	s=str(sys.argv[2])
+	# k=int(sys.argv[1])
+	# s=str(sys.argv[2])
 
-	kmers=get_kmers(k, s)
+	# kmers=get_kmers(k, s)
+	
+	
 	
 	#calculate directed overlap graph
 	graph = KmerOverlapGraph(k)
@@ -33,18 +35,22 @@ class KmerOverlapGraph:
 		newNode = Node(key)
 		self.nodeList[key] = newNode
 		this = newNode.getId()
-		
-		#calculate edges for new node
-		print(key, "checking for overlaps")
-		for node in self.nodeList.values():
-			other = node.getId()
-			if other != this:
-				print(this[-(self.k-1):])
-				print(other[:(self.k-1)])
-				if this[-(self.k-1):] == other[:(self.k-1)]:
-					print("k-1 overlap:",key, other)
-					self.nodeList[this].addNeighbor[node]
+		self.setEdges()
 		return(newNode)
+	
+	def setEdges(self):
+		#calculate edges for new node
+		for node1 in self.nodeList.values():
+			for node2 in self.nodeList.values():
+				left = node1.getId()
+				right = node2.getId()
+				if left != right:
+					print(left[-(self.k-1):])
+					print(right[:(self.k-1)])
+					if left[-(self.k-1):] == right[:(self.k-1)]:
+						print("k-1 overlap:",left, right)
+						if right not in node1.getNeighborIds():
+							self.nodeList[left].addNeighbor(node2)
 
 	def getNode(self, key):
 		if key in self.nodeList.keys():
@@ -67,14 +73,26 @@ class Node:
 		self.id = str(key)
 		self.neighbors = {}
 	
-	def addNeighbor(self, nbr, weight=0):
-		self.neighbors[nbr] = weight #nbr should be a node object
+	def addNeighbor(self, nbr):
+		self.neighbors[nbr.getId()] = nbr #nbr should be a node object
 	
 	def __str__(self):
-		return str(self.id) + " -> " + str([x.id + "," for x in self.neighbors])
+		ret = str(self.id) + " -> ["
+		com=False
+		for x in self.getNeighbors():
+			if com == True:
+				ret = ret + ","
+			ret = ret + str(x)
+			com = True
+
+		ret = ret + "]"
+		return (ret)
 	
 	def getNeighbors(self):
 		return(self.neighbors)
+	 
+	def getNeighborIds(self):
+		return(self.neighbors.keys())
 	
 	def getId(self):
 		return(self.id)
@@ -82,14 +100,9 @@ class Node:
 	def getWeight(self, nbr):
 		return(self.neighbors[nbr])
 	
-	def __hash(self):
-		return hash(self.id)
-	
 	def __eq__(self, other):
 		return(self.id == other.getId())
-	
-	def __ne__(self, other):
-		return not(self == other)
+
 		
 #naive assembly of kmers, assuming they are in order and assuming k-1 overlap
 #input is a list of kmers
